@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="theme-color" content="#1e40af">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Familias del Tossal">
+<title>Familias del Tossal</title>
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>
+  :root{
+    --primario:#1e40af; --primario-osc:#1e3a8a; --acento:#3b82f6;
+    --fondo:#f1f5f9; --tarjeta:#ffffff; --texto:#0f172a; --sub:#64748b;
+  }
+  *{margin:0;padding:0;box-sizing:border-box;-webkit-tap-highlight-color:transparent;}
+  html{scroll-behavior:smooth;}
+  body{
+    font-family:-apple-system,'Segoe UI',Roboto,'Helvetica Neue',Arial,sans-serif;
+    background:linear-gradient(160deg,var(--primario) 0%,var(--acento) 55%,#60a5fa 100%);
+    background-attachment:fixed;
+    min-height:100vh; color:var(--texto);
+    padding:0 16px calc(24px + env(safe-area-inset-bottom));
+  }
+  header{
+    text-align:center; padding:40px 12px 24px; color:#fff;
+  }
+  header .logo{font-size:52px; line-height:1;}
+  header .logo img{height:72px; width:auto; filter:drop-shadow(0 4px 10px rgba(0,0,0,.25));}
+  header h1{font-size:1.55rem; font-weight:800; margin-top:10px; letter-spacing:.3px;}
+  header p{opacity:.9; font-size:.95rem; margin-top:6px;}
+
+  #installBtn{
+    display:none; margin:0 auto 18px; border:none; cursor:pointer;
+    background:#fff; color:var(--primario); font-weight:700; font-size:.95rem;
+    padding:12px 22px; border-radius:999px; box-shadow:0 4px 14px rgba(0,0,0,.25);
+  }
+  #installBtn:active{transform:scale(.96);}
+
+  .grid{
+    display:grid; gap:14px; max-width:560px; margin:0 auto;
+    grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
+  }
+  .btn-tarjeta{
+    background:var(--tarjeta); border-radius:18px; padding:20px 14px 16px;
+    text-align:center; text-decoration:none; color:var(--texto);
+    box-shadow:0 6px 18px rgba(2,6,23,.18);
+    display:flex; flex-direction:column; align-items:center; gap:10px;
+    transition:transform .12s ease; position:relative;
+    cursor:pointer; user-select:none;
+  }
+  .btn-tarjeta:active{transform:scale(.95);}
+  .btn-tarjeta .icono{
+    width:56px;height:56px;border-radius:16px;
+    display:flex;align-items:center;justify-content:center;
+    font-size:28px; color:#fff;
+  }
+  .btn-tarjeta .titulo{font-weight:700; font-size:.98rem; line-height:1.25;}
+  .btn-tarjeta .sub{font-size:.78rem; color:var(--sub);}
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo" id="logoColegio">
+    <img src="logo.svg" alt="Logotipo del colegio" onerror="this.parentElement.textContent='🎓'">
+  </div>
+  <h1>Familias del Tossal</h1>
+  <p>Acceso rápido a formularios y recursos</p>
+</header>
+
+<button id="installBtn">📲 Instalar aplicación</button>
+
+<main class="grid" id="contenedor"></main>
+
+<script>
+/* ============ DATOS ============ */
+const CLAVE = 'botonesDocentes_v3';
+const COLORES = ['#ef4444','#f97316','#eab308','#22c55e','#14b8a6','#3b82f6','#8b5cf6','#ec4899','#0ea5e9','#f43f5e'];
+
+const PREDETERMINADOS = [
+  {id:1, titulo:'Ausencias/altas de comedor puntuales', url:'https://forms.cloud.microsoft/Pages/ResponsePage.aspx?id=FBHdc33vx0CGaVadMufim8bX8FXnOx1Nl6MQ4RzpBRRUOUU5T0xJTk5PSkk4WVJFTzkySUFLWDRHVyQlQCN0PWcu', icono:'🍽️'},
+  {id:2, titulo:'Menú de comedor',                url:'https://portal.edu.gva.es/eltossal/va/menu-comedor/',         icono:'🍴'},
+  {id:3, titulo:'Calendario escolar',           url:'https://portal.edu.gva.es/eltossal/va/calendario-escolar/',   icono:'📅'},
+  {id:4, titulo:'Contacto docentes',              url:'https://portal.edu.gva.es/eltossal/va/personal/',     icono:'🧑‍🏫'},
+  {id:5, titulo:'Web del colegio',                url:'https://portal.edu.gva.es/eltossal/',   icono:'🏫'},
+  {id:6, titulo:'Correo del colegio',             url:'mailto:03009749@edu.gva.es', icono:'✉️'},
+  {id:6, titulo:'Llamar',                         url:'tel:+34965919770', icono:'📞'},
+];
+
+function cargarBotones(){
+  try{
+    const d = JSON.parse(localStorage.getItem(CLAVE));
+    if(Array.isArray(d)) return d;
+  }catch(e){}
+  return PREDETERMINADOS.slice();
+}
+function guardarBotones(b){ localStorage.setItem(CLAVE, JSON.stringify(b)); }
+let botones = cargarBotones();
+
+/* ============ RENDER ============ */
+const contenedor = document.getElementById('contenedor');
+function render(){
+  contenedor.innerHTML = '';
+  botones.forEach((b,i)=>{
+    const a = document.createElement('a');
+    a.className = 'btn-tarjeta';
+    a.href = b.url; a.target = '_blank'; a.rel = 'noopener';
+    a.innerHTML = `
+      <span class="icono" style="background:${COLORES[i % COLORES.length]}">${b.icono}</span>
+      <span class="titulo">${escapar(b.titulo)}</span>`;
+    contenedor.appendChild(a);
+  });
+}
+function escapar(t){ return String(t).replace(/[&<>"']/g, c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+
+
+/* ============ PWA ============ */
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('sw.js').catch(()=>{});
+}
+let deferredPrompt = null;
+window.addEventListener('beforeinstallprompt', e=>{
+  e.preventDefault(); deferredPrompt = e;
+  document.getElementById('installBtn').style.display = 'block';
+});
+document.getElementById('installBtn').addEventListener('click', async ()=>{
+  if(!deferredPrompt) return;
+  deferredPrompt.prompt();
+  await deferredPrompt.userChoice;
+  deferredPrompt = null;
+  document.getElementById('installBtn').style.display = 'none';
+});
+
+
+
+render();
+</script>
+</body>
+</html>
